@@ -11,6 +11,10 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)  # Use a secure random key in production
 oauth = OAuth(app)
 
+admin_email = [
+    "syihabuddin.y.muhammad@gdplabs.id",
+    "michael.h.senatra@gdplabs.id"
+    ]
 
 oauth.register(
   name='oidc',
@@ -29,7 +33,8 @@ def dashboard():
 
     print(f'session: {session}')
     # Fix: Get cognito:groups from the user object
-    groups = session.get('user', {}).get('cognito:groups', [])
+    user = session.get('user', {})
+    groups = user.get('cognito:groups', [])
     print(f'groups: {groups}')
     if not groups:
         return "No access: User is not in any Cognito group."
@@ -54,11 +59,14 @@ def dashboard():
     try:
         # try using identity type Quicksight
         # Check if user is not allowed to see certain dashboards
+        user_email = user.get('email', 'unknown')
+        if user_email in admin_email:
+            user_email = "millenio.ramadizsa@gdplabs.id"  # Use a default email for admin users
         response = quicksight.get_dashboard_embed_url(
             AwsAccountId=os.getenv('AWS_ACCOUNT_ID'),
             DashboardId=dashboard_id,
             IdentityType='QUICKSIGHT',
-            UserArn=f"arn:aws:quicksight:ap-southeast-1:{os.getenv('AWS_ACCOUNT_ID')}:user/default/{user.get('email', 'unknown')}",
+            UserArn=f"arn:aws:quicksight:ap-southeast-1:{os.getenv('AWS_ACCOUNT_ID')}:user/default/{user_email}",
             SessionLifetimeInMinutes=120
         )
         print(f'response: {response}')
