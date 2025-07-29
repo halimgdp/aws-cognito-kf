@@ -107,14 +107,13 @@ def index():
         '''
     else:
         return 'Welcome! Please <a href="/login">Login</a>.'
-    
 
 @app.route('/login')
 def login():
-    # Alternate option to redirect to /authorize
-    # redirect_uri = url_for('authorize', _external=True)
-    # return oauth.oidc.authorize_redirect(redirect_uri)
-    return oauth.oidc.authorize_redirect(f'{os.getenv("URL")}:{os.getenv("PORT")}/authorize')
+    base_url = os.getenv('BASE_URL')
+    redirect_uri = base_url+"/authorize"
+    return oauth.oidc.authorize_redirect(redirect_uri)
+    # return oauth.oidc.authorize_redirect(f'http://{os.getenv("URL")}:{os.getenv("PORT")}/authorize')
 
 
 @app.route('/logout')
@@ -123,4 +122,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host=os.getenv('URL'), port=os.getenv('PORT'))
+    app.run(debug=True, host='0.0.0.0', port=5000)
