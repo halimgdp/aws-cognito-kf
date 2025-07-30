@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, session
+from flask import Flask, redirect, url_for, session, render_template
 from authlib.integrations.flask_client import OAuth
 import os
 import jwt  # Add this import at the top
@@ -36,8 +36,9 @@ def dashboard():
     user = session.get('user', {})
     groups = user.get('cognito:groups', [])
     print(f'groups: {groups}')
+    
     if not groups:
-        return "No access: User is not in any Cognito group."
+        return render_template('dashboard.html', error="No access: User is not in any Cognito group.")
 
     # Determine dashboard ID based on group
     dashboard_id = None
@@ -46,7 +47,7 @@ def dashboard():
     elif 'HR' in groups:
         dashboard_id = os.getenv('HR_DASHBOARD_ID')
     else:
-        return "No access: User group not authorized."
+        return render_template('dashboard.html', error="No access: User group not authorized.")
 
     # Generate embed URL
     quicksight = boto3.client(
@@ -71,12 +72,10 @@ def dashboard():
         )
         print(f'response: {response}')
         embed_url = response['EmbedUrl']
-        return f'''
-            <iframe src="{embed_url}" width="100%" height="700px"></iframe>
-            <a href="/logout">Logout</a>
-        '''
+        return render_template('dashboard.html', embed_url=embed_url)
     except Exception as e:
-        return f"Error loading dashboard: {str(e)}"
+        return render_template('dashboard.html', error=f"Error loading dashboard: {str(e)}")
+
 
 @app.route('/authorize')
 def authorize():
@@ -96,24 +95,18 @@ def authorize():
 
     return redirect(url_for('index'))
 
+
 @app.route('/')
 def index():
     user = session.get('user')
-    if user:
-        return f'''
-            Hello, {user["email"]}! 
-            <a href="/dashboard">View Dashboard</a> | 
-            <a href="/logout">Logout</a>
-        '''
-    else:
-        return 'Welcome! Please <a href="/login">Login</a>.'
+    return render_template('index.html', user=user)
+    
 
 @app.route('/login')
 def login():
-    base_url = os.getenv('BASE_URL')
-    redirect_uri = base_url+"/authorize"
+    # Use url_for to automatically construct the correct redirect URI for any environment
+    redirect_uri = url_for('authorize', _external=True)
     return oauth.oidc.authorize_redirect(redirect_uri)
-    # return oauth.oidc.authorize_redirect(f'http://{os.getenv("URL")}:{os.getenv("PORT")}/authorize')
 
 
 @app.route('/logout')
@@ -122,4 +115,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host=os.getenv('HOST'), port=os.getenv('PORT'))

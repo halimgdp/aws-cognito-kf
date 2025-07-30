@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Home - AWS Cognito Dashboard{% endblock %}
+
+{% block header %}Welcome to AWS Cognito Dashboard{% endblock %}
+
+{% block content %}
+    {% if user %}
+        <div class="success">
+            <h2>Hello, {{ user.email }}!</h2>
+            <p>You are successfully logged in.</p>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard') }}">View Dashboard</a>
+            <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+        </div>
+    {% else %}
+        <div style="text-align: center;">
+            <h2>Welcome!</h2>
+            <p>Please log in to access your dashboard.</p>
+            <div class="nav-links">
+                <a href="{{ url_for('login') }}">Login</a>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %} 
